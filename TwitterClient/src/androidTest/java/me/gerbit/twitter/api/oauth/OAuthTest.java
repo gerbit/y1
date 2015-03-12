@@ -1,4 +1,4 @@
-package me.gerbit.twitter.oauth.apponly;
+package me.gerbit.twitter.api.oauth;
 
 import android.test.AndroidTestCase;
 

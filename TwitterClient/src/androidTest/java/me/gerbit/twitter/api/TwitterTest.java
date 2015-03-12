@@ -9,10 +9,12 @@ import java.io.IOException;
 
 public class TwitterTest extends AndroidTestCase {
     public void testSearch() {
-        Uri.Builder builder = new Uri.Builder();
-        builder.appendQueryParameter("q", "#android");
+        SearchQuery query = SearchQuery.builder("#android")
+                .lang("ru")
+                .resultType(SearchQuery.ResultType.RECENT)
+                .build();
         try {
-            JSONObject json = Twitter.search(builder.build().toString());
+            JSONObject json = Twitter.search(query.toString());
             assertEquals(true, json.has("search_metadata"));
         } catch (IOException e) {
             fail(e.getMessage());
