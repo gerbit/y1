@@ -17,6 +17,10 @@ public class Twitter {
 
     private static final String SEARCH_RESOURCE = "https://api.twitter.com/1.1/search/tweets.json";
 
+    public static JSONObject search(SearchQuery query) throws IOException {
+        return search(query.toString());
+    }
+
     public static JSONObject search(String query) throws IOException {
         JSONObject ret = null;
         HttpsURLConnection connection = null;

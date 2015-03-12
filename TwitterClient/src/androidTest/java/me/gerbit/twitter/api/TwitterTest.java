@@ -14,7 +14,7 @@ public class TwitterTest extends AndroidTestCase {
                 .resultType(SearchQuery.ResultType.RECENT)
                 .build();
         try {
-            JSONObject json = Twitter.search(query.toString());
+            JSONObject json = Twitter.search(query);
             assertEquals(true, json.has("search_metadata"));
         } catch (IOException e) {
             fail(e.getMessage());
