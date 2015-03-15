@@ -120,6 +120,17 @@ public class MainActivityFragment extends Fragment implements AbsListView.OnScro
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_refresh:
+                if (mQueryInProgress) {
+                    return true;
+                }
+                mQueryInProgress = true;
+                mTwitterSearch.search(mSearchMetadata.getRefreshUrl(), new SearchCallback() {
+                    @Override
+                    public void onQueryComplete(SearchResponse searchResponse) {
+                        mQueryInProgress = false;
+                        mUiHandler.obtainMessage(REFRESH, searchResponse).sendToTarget();
+                    }
+                });
                 return true;
             default:
                 return false;
@@ -190,6 +201,8 @@ public class MainActivityFragment extends Fragment implements AbsListView.OnScro
                         }
                         break;
                     case REFRESH:
+                        f.mSearchMetadata = response.getSearchMetadata();
+                        f.mTweetsAdapter.newest(response.getTweetList());
                         break;
                     default:
                         super.handleMessage(msg);
@@ -215,6 +228,11 @@ public class MainActivityFragment extends Fragment implements AbsListView.OnScro
 
         public void next(List<Tweet> tweetList) {
             mTweetList.addAll(tweetList);
+            notifyDataSetChanged();
+        }
+
+        public void newest(List<Tweet> tweetList) {
+            mTweetList.addAll(0, tweetList);
             notifyDataSetChanged();
         }
 
