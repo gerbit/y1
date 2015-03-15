@@ -14,7 +14,7 @@ public class Utils {
 
     private static final String LINE_SEPARATOR = System.getProperty("line.separator","\n");
 
-    /** Writes data {@param s} to a connection */
+    /** Writes data to a connection */
     public static boolean write(OutputStream outputStream, String s) {
         try {
             BufferedWriter wr = new BufferedWriter(new OutputStreamWriter(outputStream));

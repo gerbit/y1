@@ -8,30 +8,46 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-public class Tweet {
+public final class Tweet {
 
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("EEE MMM dd HH:mm:ss ZZZZZ yyyy", Locale.ENGLISH);
 
-    private int mId;
+    private static final String ID_FIELD = "id";
+    private static final String CREATED_AT_FIELD = "created_at";
+    private static final String TEXT_FIELD = "text";
+    private static final String FAVORITE_COUNT_FIELD = "favorite_count";
+    private static final String RETWEET_COUNT_FIELD = "retweet_count";
+    private static final String USER_FIELD = "user";
 
-    private Date mCreatedAt;
-    private String mText;
-    private int mFavoriteCount;
-    private int mRetweetCount;
-    private User mUser;
+    private final long mId;
+    private final Date mCreatedAt;
+    private final String mText;
+    private final int mFavoriteCount;
+    private final int mRetweetCount;
+    private final User mUser;
 
-    private Tweet() {
+    private Tweet(final long id,
+                  final Date date,
+                  final String text,
+                  final int favCount,
+                  final int retwCount,
+                  final User user) {
+        mId = id;
+        mCreatedAt = date;
+        mText = text;
+        mFavoriteCount = favCount;
+        mRetweetCount = retwCount;
+        mUser = user;
     }
 
     public static Tweet parse(final JSONObject obj) throws JSONException {
-        final Tweet tweet = new Tweet();
-        tweet.mId = obj.getInt("id");
-        tweet.mCreatedAt = Tweet.parseDate(obj.getString("created_at"));
-        tweet.mText = obj.getString("text");
-        tweet.mFavoriteCount = obj.getInt("favorite_count");
-        tweet.mRetweetCount = obj.getInt("retweet_count");
-        tweet.mUser = User.parse(obj.getJSONObject("user"));
-        return tweet;
+        return new Tweet(
+            obj.getLong(ID_FIELD),
+            parseDate(obj.getString(CREATED_AT_FIELD)),
+            obj.getString(TEXT_FIELD),
+            obj.getInt(FAVORITE_COUNT_FIELD),
+            obj.getInt(RETWEET_COUNT_FIELD),
+            User.parse(obj.getJSONObject(USER_FIELD)));
     }
 
     private static Date parseDate(final String twitterDate) throws JSONException {
@@ -44,7 +60,7 @@ public class Tweet {
         return date;
     }
 
-    public int getId() {
+    public long getId() {
         return mId;
     }
 
