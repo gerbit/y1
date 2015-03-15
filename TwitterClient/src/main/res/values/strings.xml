@@ -2,4 +2,5 @@
     <string name="app_name">GerbitTwitterClient</string>
     <string name="action_refresh">Refresh</string>
     <string name="tweets_list_footer_text">Loading...</string>
+    <string name="search_title">Search</string>
 </resources>

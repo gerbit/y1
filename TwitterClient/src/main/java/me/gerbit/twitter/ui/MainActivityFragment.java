@@ -7,7 +7,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.util.Log;
 import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -18,6 +17,7 @@ import android.view.ViewGroup;
 import android.widget.AbsListView;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
+import android.widget.SearchView;
 import android.widget.TextView;
 
 import java.lang.ref.WeakReference;
@@ -26,8 +26,8 @@ import java.util.List;
 
 import me.gerbit.twitter.api.SearchCallback;
 import me.gerbit.twitter.api.SearchQuery;
-import me.gerbit.twitter.api.TwitterSearch;
 import me.gerbit.twitter.api.SearchResponse;
+import me.gerbit.twitter.api.TwitterSearch;
 import me.gerbit.twitter.data.SearchMetadata;
 import me.gerbit.twitter.data.Tweet;
 
@@ -37,6 +37,7 @@ public class MainActivityFragment extends Fragment implements AbsListView.OnScro
 
     private static final int QUERY_COMPLETE = 0;
     private static final int NEXT_LOADED = 1;
+    private static final int REFRESH = 2;
 
     private ListView mListView;
 
@@ -88,20 +89,37 @@ public class MainActivityFragment extends Fragment implements AbsListView.OnScro
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.menu_main, menu);
-    }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.action_refresh:
+        SearchView search = (SearchView) menu.findItem(R.id.search).getActionView();
+
+        search.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                if (mQueryInProgress) {
+                    return true;
+                }
                 mQueryInProgress = true;
-                mTwitterSearch.search(SearchQuery.builder("#diablo").lang("ru").resultType(SearchQuery.ResultType.RECENT).build(), new SearchCallback() {
+                mTwitterSearch.search(SearchQuery.builder(query).resultType(SearchQuery.ResultType.RECENT).lang("ru").build(), new SearchCallback() {
                     @Override
                     public void onQueryComplete(SearchResponse searchResponse) {
                         mQueryInProgress = false;
                         mUiHandler.obtainMessage(QUERY_COMPLETE, searchResponse).sendToTarget();
                     }
                 });
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                return false;
+            }
+        });
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_refresh:
                 return true;
             default:
                 return false;
@@ -126,11 +144,13 @@ public class MainActivityFragment extends Fragment implements AbsListView.OnScro
 
     @Override
     public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
-        if (visibleItemCount == 0) {
+        if (firstVisibleItem == 0 || visibleItemCount == 0) {
+            mFooterView.setVisibility(View.GONE);
             return;
         }
         if (firstVisibleItem + visibleItemCount == totalItemCount && !mQueryInProgress) {
             mQueryInProgress = true;
+            mFooterView.setVisibility(View.VISIBLE);
             mTwitterSearch.search(mSearchMetadata.getNextResultsUrl(), new SearchCallback() {
                 @Override
                 public void onQueryComplete(SearchResponse searchResponse) {
@@ -159,7 +179,6 @@ public class MainActivityFragment extends Fragment implements AbsListView.OnScro
                     case QUERY_COMPLETE:
                         f.mSearchMetadata = response.getSearchMetadata();
                         f.mTweetsAdapter.update(response.getTweetList());
-                        f.mFooterView.setVisibility(View.VISIBLE);
                         f.mListView.setOnScrollListener(f);
                         break;
                     case NEXT_LOADED:
@@ -169,6 +188,8 @@ public class MainActivityFragment extends Fragment implements AbsListView.OnScro
                             f.mFooterView.setVisibility(View.GONE);
                             f.mListView.setOnScrollListener(null);
                         }
+                        break;
+                    case REFRESH:
                         break;
                     default:
                         super.handleMessage(msg);

@@ -38,12 +38,6 @@ public final class SearchResponse {
                 tweets);
     }
 
-    void next(final JSONObject object) throws JSONException {
-        SearchResponse response = parse(object);
-        mTweetList.addAll(response.mTweetList);
-        mSearchMetadata = response.mSearchMetadata;
-    }
-
     public SearchMetadata getSearchMetadata() {
         return mSearchMetadata;
     }
