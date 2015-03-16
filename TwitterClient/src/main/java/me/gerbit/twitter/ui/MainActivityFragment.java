@@ -205,14 +205,16 @@ public class MainActivityFragment extends Fragment implements AbsListView.OnScro
         public void handleMessage(Message msg) {
             MainActivityFragment f = mFragmentRef.get();
             if (f != null) {
-                OkSearchResponse response = (OkSearchResponse) msg.obj;
+                SearchResponse response = null;
                 switch (msg.what) {
                     case QUERY_COMPLETE:
+                        response = (SearchResponse) msg.obj;
                         f.mSearchMetadata = response.getSearchMetadata();
                         f.mTweetsAdapter.update(response.getTweetList());
                         f.mListView.setOnScrollListener(f);
                         break;
                     case NEXT_LOADED:
+                        response = (SearchResponse) msg.obj;
                         f.mSearchMetadata = response.getSearchMetadata();
                         f.mTweetsAdapter.next(response.getTweetList());
                         if (!f.mSearchMetadata.hasNextResults()) {
@@ -221,6 +223,7 @@ public class MainActivityFragment extends Fragment implements AbsListView.OnScro
                         }
                         break;
                     case REFRESH:
+                        response = (SearchResponse) msg.obj;
                         f.mSearchMetadata = response.getSearchMetadata();
                         f.mTweetsAdapter.newest(response.getTweetList());
                         f.mListView.setSelectionAfterHeaderView();

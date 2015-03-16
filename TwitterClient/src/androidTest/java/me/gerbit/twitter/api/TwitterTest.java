@@ -33,7 +33,7 @@ public class TwitterTest extends AndroidTestCase {
                 .lang("ru")
                 .resultType(SearchQuery.ResultType.RECENT)
                 .build();
-        OkSearchResponse response = null;
+        SearchResponse response = null;
         try {
             TwitterSearch twitterSearch = new TwitterSearch("1");
             response = twitterSearch.search(query);
