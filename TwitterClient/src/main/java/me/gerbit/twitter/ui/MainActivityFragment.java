@@ -19,6 +19,7 @@ import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.SearchView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -26,6 +27,7 @@ import java.util.List;
 
 import me.gerbit.twitter.api.SearchCallback;
 import me.gerbit.twitter.api.SearchQuery;
+import me.gerbit.twitter.api.OkSearchResponse;
 import me.gerbit.twitter.api.SearchResponse;
 import me.gerbit.twitter.api.TwitterSearch;
 import me.gerbit.twitter.data.SearchMetadata;
@@ -38,6 +40,7 @@ public class MainActivityFragment extends Fragment implements AbsListView.OnScro
     private static final int QUERY_COMPLETE = 0;
     private static final int NEXT_LOADED = 1;
     private static final int REFRESH = 2;
+    private static final int QUERY_ERROR = 3;
 
     private ListView mListView;
 
@@ -105,6 +108,12 @@ public class MainActivityFragment extends Fragment implements AbsListView.OnScro
                         mQueryInProgress = false;
                         mUiHandler.obtainMessage(QUERY_COMPLETE, searchResponse).sendToTarget();
                     }
+
+                    @Override
+                    public void onError(int code, String msg) {
+                        mUiHandler.obtainMessage(QUERY_ERROR, code, 0, msg).sendToTarget();
+                    }
+
                 });
                 return true;
             }
@@ -130,6 +139,12 @@ public class MainActivityFragment extends Fragment implements AbsListView.OnScro
                         mQueryInProgress = false;
                         mUiHandler.obtainMessage(REFRESH, searchResponse).sendToTarget();
                     }
+
+                    @Override
+                    public void onError(int code, String msg) {
+                        mUiHandler.obtainMessage(QUERY_ERROR, code, 0, msg).sendToTarget();
+                    }
+
                 });
                 return true;
             default:
@@ -168,6 +183,11 @@ public class MainActivityFragment extends Fragment implements AbsListView.OnScro
                     mQueryInProgress = false;
                     mUiHandler.obtainMessage(NEXT_LOADED, searchResponse).sendToTarget();
                 }
+
+                @Override
+                public void onError(int code, String msg) {
+                    mUiHandler.obtainMessage(QUERY_ERROR, code, 0, msg).sendToTarget();
+                }
             });
         }
     }
@@ -185,7 +205,7 @@ public class MainActivityFragment extends Fragment implements AbsListView.OnScro
         public void handleMessage(Message msg) {
             MainActivityFragment f = mFragmentRef.get();
             if (f != null) {
-                SearchResponse response = (SearchResponse) msg.obj;
+                OkSearchResponse response = (OkSearchResponse) msg.obj;
                 switch (msg.what) {
                     case QUERY_COMPLETE:
                         f.mSearchMetadata = response.getSearchMetadata();
@@ -203,7 +223,12 @@ public class MainActivityFragment extends Fragment implements AbsListView.OnScro
                     case REFRESH:
                         f.mSearchMetadata = response.getSearchMetadata();
                         f.mTweetsAdapter.newest(response.getTweetList());
+                        f.mListView.setSelectionAfterHeaderView();
                         break;
+                    case QUERY_ERROR:
+                        if (f.getActivity() != null) {
+                            Toast.makeText(f.getActivity(), (String) msg.obj, Toast.LENGTH_LONG).show();
+                        }
                     default:
                         super.handleMessage(msg);
                 }
@@ -282,5 +307,6 @@ public class MainActivityFragment extends Fragment implements AbsListView.OnScro
                 return (T) child;
             }
         }
+
     }
 }

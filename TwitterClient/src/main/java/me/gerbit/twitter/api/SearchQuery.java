@@ -13,7 +13,7 @@ public class SearchQuery {
 
         private final String mValue;
 
-        private ResultType(final String value) {
+        ResultType(final String value) {
             mValue = value;
         }
 

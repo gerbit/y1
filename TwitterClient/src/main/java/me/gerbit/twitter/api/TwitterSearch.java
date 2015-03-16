@@ -24,10 +24,6 @@ public class TwitterSearch {
 
     private static final int SEARCH_QUERY = 0;
 
-    private static final int SEARCH_UPDATE = 1;
-
-    private static final int SEARCH_NEXT = 2;
-
     private static final String SEARCH_RESOURCE = "https://api.twitter.com/1.1/search/tweets.json";
 
     private Handler mHtHandler;
@@ -44,13 +40,16 @@ public class TwitterSearch {
                     case SEARCH_QUERY:
                         try {
                             QueryHolder holder = (QueryHolder) msg.obj;
-                            holder.callback.onQueryComplete(search(holder.query));
+                            SearchResponse response = search(holder.query);
+                            if (!response.isError()) {
+                                holder.callback.onQueryComplete(response);
+                            } else {
+                                holder.callback.onError(response.getError().getErrorCode(),
+                                        response.getError().getErrorMessage());
+                            }
                         } catch (IOException e) {
                             Log.w(TAG, e);
                         }
-                        break;
-                    case SEARCH_NEXT:
-
                         break;
                     default:
                         super.handleMessage(msg);
@@ -94,7 +93,10 @@ public class TwitterSearch {
             int responseCode = connection.getResponseCode();
             if (responseCode == HttpsURLConnection.HTTP_OK) {
                 JSONObject obj = new JSONObject(Utils.read(connection.getInputStream()));
-                ret = SearchResponse.parse(obj);
+                ret = OkSearchResponse.parse(obj);
+            } else {
+                Log.e(TAG, "Response " + responseCode);
+                ret = new ErrorSearchResponse(new Error(responseCode, connection.getResponseMessage()));
             }
         } catch  (MalformedURLException e) {
             throw new IOException("Invalid endpoint URL specified.", e);
