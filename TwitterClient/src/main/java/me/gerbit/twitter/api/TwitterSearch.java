@@ -29,7 +29,7 @@ public class TwitterSearch {
     private Handler mHtHandler;
 
     public TwitterSearch(final String name) {
-        HandlerThread thread = new HandlerThread(name);
+        final HandlerThread thread = new HandlerThread(name);
         thread.start();
 
         mHtHandler = new Handler(thread.getLooper()) {
@@ -41,11 +41,14 @@ public class TwitterSearch {
                         try {
                             QueryHolder holder = (QueryHolder) msg.obj;
                             SearchResponse response = search(holder.query);
-                            if (!response.isError()) {
-                                holder.callback.onQueryComplete(response);
-                            } else {
-                                holder.callback.onError(response.getError().getErrorCode(),
-                                        response.getError().getErrorMessage());
+                            SearchCallback callback = holder.callback;
+                            if (callback != null) {
+                                if (!response.isError()) {
+                                    holder.callback.onQueryComplete(response);
+                                } else {
+                                    holder.callback.onError(response.getError().getErrorCode(),
+                                            response.getError().getErrorMessage());
+                                }
                             }
                         } catch (IOException e) {
                             Log.w(TAG, e);

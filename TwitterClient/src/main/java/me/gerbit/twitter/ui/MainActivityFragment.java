@@ -2,7 +2,11 @@ package me.gerbit.twitter.ui;
 
 import android.app.Activity;
 import android.app.Fragment;
+import android.app.SearchableInfo;
 import android.content.Context;
+import android.graphics.drawable.AnimationDrawable;
+import android.media.Image;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -16,12 +20,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
 import android.widget.BaseAdapter;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.lang.ref.WeakReference;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,6 +61,8 @@ public class MainActivityFragment extends Fragment implements AbsListView.OnScro
     private View mFooterView;
 
     private boolean mQueryInProgress;
+
+    private Menu mMenu;
 
     public MainActivityFragment() {
     }
@@ -91,9 +99,12 @@ public class MainActivityFragment extends Fragment implements AbsListView.OnScro
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+
+        mMenu = menu;
+
         inflater.inflate(R.menu.menu_main, menu);
 
-        SearchView search = (SearchView) menu.findItem(R.id.search).getActionView();
+        final SearchView search = (SearchView) menu.findItem(R.id.search).getActionView();
 
         search.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
@@ -123,15 +134,25 @@ public class MainActivityFragment extends Fragment implements AbsListView.OnScro
                 return false;
             }
         });
+
+        search.setOnSearchClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                SearchView view = (SearchView) v;
+                view.setQuery(mSearchMetadata != null ? Uri.decode(mSearchMetadata.getQuery()) : "", false);
+            }
+        });
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_refresh:
-                if (mQueryInProgress) {
+                if (mQueryInProgress || mSearchMetadata == null) {
                     return true;
                 }
+                // TODO Custom animation (default ProgressBar?)
+                ((AnimationDrawable) item.getIcon()).start();
                 mQueryInProgress = true;
                 mTwitterSearch.search(mSearchMetadata.getRefreshUrl(), new SearchCallback() {
                     @Override
@@ -227,11 +248,14 @@ public class MainActivityFragment extends Fragment implements AbsListView.OnScro
                         f.mSearchMetadata = response.getSearchMetadata();
                         f.mTweetsAdapter.newest(response.getTweetList());
                         f.mListView.setSelectionAfterHeaderView();
+                        ((AnimationDrawable)(f.mMenu.findItem(R.id.action_refresh).getIcon())).stop();
                         break;
                     case QUERY_ERROR:
                         if (f.getActivity() != null) {
                             Toast.makeText(f.getActivity(), (String) msg.obj, Toast.LENGTH_LONG).show();
+                            ((AnimationDrawable)(f.mMenu.findItem(R.id.action_refresh).getIcon())).stop();
                         }
+                        break;
                     default:
                         super.handleMessage(msg);
                 }
@@ -285,17 +309,23 @@ public class MainActivityFragment extends Fragment implements AbsListView.OnScro
                 convertView = mInflater.inflate(R.layout.tweet_adapter_layout,
                         parent, false);
             }
-            TextView tv = ViewHolder.get(convertView, R.id.text);
+            TextView text = ViewHolder.get(convertView, R.id.text);
+            TextView name = ViewHolder.get(convertView, R.id.name);
+            TextView screenName = ViewHolder.get(convertView, R.id.screen_name);
+            ImageView profileImg = ViewHolder.get(convertView, R.id.profile_img);
 
             Tweet tweet = getItem(position);
-            tv.setText(tweet.getText());
+            text.setText(tweet.getText());
+            name.setText(tweet.getUser().getName());
+            screenName.setText("@" + tweet.getUser().getScreenName());
+
             return convertView;
         }
 
         private static final class ViewHolder {
 
             @SuppressWarnings("unchecked")
-            public static <T extends View> T get(View view, int id) {
+            public static <T extends View> T get(final View view, final int id) {
                 SparseArray<View> holder = (SparseArray<View>) view.getTag();
                 if (holder == null) {
                     holder = new SparseArray<View>();

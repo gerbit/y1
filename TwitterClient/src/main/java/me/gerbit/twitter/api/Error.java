@@ -1,6 +1,6 @@
 package me.gerbit.twitter.api;
 
-public class Error {
+public final class Error {
 
     private final int mErrorCode;
 

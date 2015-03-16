@@ -5,11 +5,11 @@ import java.util.List;
 import me.gerbit.twitter.data.SearchMetadata;
 import me.gerbit.twitter.data.Tweet;
 
-public class ErrorSearchResponse implements SearchResponse {
+public final class ErrorSearchResponse implements SearchResponse {
 
     private final Error mError;
 
-    ErrorSearchResponse(Error err) {
+    ErrorSearchResponse(final Error err) {
         mError = err;
     }
 
@@ -30,6 +30,6 @@ public class ErrorSearchResponse implements SearchResponse {
 
     @Override
     public Error getError() {
-        return null;
+        return mError;
     }
 }
