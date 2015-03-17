@@ -50,7 +50,9 @@ public class OAuth {
             connection.setRequestProperty("User-Agent", TwitterConfig.AGENT);
             connection.setRequestProperty("Authorization", "Basic " + encodeKeys(TwitterConfig.OAUTH_APPONLY_CONSUMER_KEY, TwitterConfig.OAUTH_APPONLY_CONSUMER_SECRET));
             connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8");
-            connection.setRequestProperty("Content-Length", "29");
+
+            String body = "grant_type=client_credentials";
+            connection.setRequestProperty("Content-Length", Integer.toString(body.length()));
             connection.setUseCaches(false);
 
             connection.connect();
@@ -60,10 +62,10 @@ public class OAuth {
                 JSONObject obj = new JSONObject(Utils.read(connection.getInputStream()));
                 String tokenType = obj.getString("token_type");
                 String token = obj.getString("access_token");
-                sBearerToken = ((tokenType.equals("bearer")) && (token != null)) ? token : "";
+                sBearerToken = ((tokenType.equals("bearer")) && (token != null)) ? token : null;
                 return sBearerToken;
             }
-            return "";
+            return null;
         }
         catch (MalformedURLException e) {
             throw new IOException("Invalid endpoint URL specified.", e);

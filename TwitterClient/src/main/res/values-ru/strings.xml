@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="action_refresh">Обновить</string>
+    <string name="tweets_list_footer_text">Загрузка...</string>
+    <string name="search_title">Поиск</string>
+</resources>

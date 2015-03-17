@@ -2,6 +2,8 @@ package me.gerbit.twitter.api;
 
 import android.net.Uri;
 
+import java.util.Locale;
+
 public class SearchQuery {
 
     public enum ResultType {
@@ -11,7 +13,7 @@ public class SearchQuery {
 
         private final String mValue;
 
-        private ResultType(final String value) {
+        ResultType(final String value) {
             mValue = value;
         }
 
@@ -25,10 +27,14 @@ public class SearchQuery {
 
     private SearchQuery(Builder b) {
         Uri.Builder uriBuilder = new Uri.Builder();
-        mSearchQuery = uriBuilder.appendQueryParameter("q", b.mSearchQuery)
-                .appendQueryParameter("lang", b.mLang)
-                .appendQueryParameter("result_type", b.mResultType.toString())
-                .build().toString();
+        uriBuilder.appendQueryParameter("q", b.mSearchQuery);
+        if (b.mLang != null) {
+            uriBuilder.appendQueryParameter("lang", b.mLang);
+        }
+        if (b.mResultType != null) {
+            uriBuilder.appendQueryParameter("result_type", b.mResultType.toString());
+        }
+        mSearchQuery = uriBuilder.build().toString();
     }
 
     public static Builder builder(String searchQuery) {
@@ -49,6 +55,9 @@ public class SearchQuery {
         private ResultType mResultType;
 
         private Builder(String searchQuery) {
+            if (searchQuery == null) {
+                throw new IllegalArgumentException("search string cannot be empty");
+            }
             mSearchQuery = searchQuery;
         }
 
