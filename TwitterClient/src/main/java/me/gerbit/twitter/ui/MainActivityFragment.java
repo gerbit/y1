@@ -2,10 +2,10 @@ package me.gerbit.twitter.ui;
 
 import android.app.Activity;
 import android.app.Fragment;
-import android.app.SearchableInfo;
 import android.content.Context;
+import android.content.res.Configuration;
+import android.graphics.Bitmap;
 import android.graphics.drawable.AnimationDrawable;
-import android.media.Image;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -27,17 +27,17 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.lang.ref.WeakReference;
-import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
 
 import me.gerbit.twitter.api.SearchCallback;
 import me.gerbit.twitter.api.SearchQuery;
-import me.gerbit.twitter.api.OkSearchResponse;
 import me.gerbit.twitter.api.SearchResponse;
 import me.gerbit.twitter.api.TwitterSearch;
 import me.gerbit.twitter.data.SearchMetadata;
 import me.gerbit.twitter.data.Tweet;
+import me.gerbit.twitter.imageload.ImageCache;
+import me.gerbit.twitter.imageload.ImageFetcher;
 
 public class MainActivityFragment extends Fragment implements AbsListView.OnScrollListener {
 
@@ -64,6 +64,10 @@ public class MainActivityFragment extends Fragment implements AbsListView.OnScro
 
     private Menu mMenu;
 
+    private ImageFetcher mImageFetcher;
+
+    private String mLocaleLang;
+
     public MainActivityFragment() {
     }
 
@@ -81,8 +85,19 @@ public class MainActivityFragment extends Fragment implements AbsListView.OnScro
 
         mTwitterSearch = new TwitterSearch("TwitterSearchCaller");
 
-        mTweetsAdapter = new TweetsAdapter(activity);
+        mImageFetcher = new ImageFetcher(activity, getResources().getDimensionPixelSize(R.dimen.tweet_profile_img_width));
 
+        ImageCache.ImageCacheParams imageCacheParams = new ImageCache.ImageCacheParams();
+        imageCacheParams.mCompressFormat = Bitmap.CompressFormat.PNG;
+        imageCacheParams.setMemCacheSizePercent(0.25f);
+
+        mImageFetcher.setLoadingImage(R.drawable.blank_avatar);
+
+        mImageFetcher.addImageCache(getFragmentManager(), imageCacheParams);
+
+        mTweetsAdapter = new TweetsAdapter(activity, mImageFetcher);
+
+        mLocaleLang = getResources().getConfiguration().locale.getLanguage();
     }
 
     @Override
@@ -95,6 +110,20 @@ public class MainActivityFragment extends Fragment implements AbsListView.OnScro
         mListView.addFooterView(mFooterView);
         mListView.setAdapter(mTweetsAdapter);
         return v;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        mImageFetcher.setExitTasksEarly(false);
+        mTweetsAdapter.notifyDataSetChanged();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        mImageFetcher.setPauseWork(false);
+        mImageFetcher.setExitTasksEarly(true);
     }
 
     @Override
@@ -113,7 +142,7 @@ public class MainActivityFragment extends Fragment implements AbsListView.OnScro
                     return true;
                 }
                 mQueryInProgress = true;
-                mTwitterSearch.search(SearchQuery.builder(query).resultType(SearchQuery.ResultType.RECENT).lang("ru").build(), new SearchCallback() {
+                mTwitterSearch.search(SearchQuery.builder(query).resultType(SearchQuery.ResultType.RECENT).lang(mLocaleLang).build(), new SearchCallback() {
                     @Override
                     public void onQueryComplete(SearchResponse searchResponse) {
                         mQueryInProgress = false;
@@ -265,11 +294,14 @@ public class MainActivityFragment extends Fragment implements AbsListView.OnScro
 
     private static final class TweetsAdapter extends BaseAdapter {
 
+        private final ImageFetcher mImageFetcher;
+
         private LayoutInflater mInflater;
 
         private List<Tweet> mTweetList;
 
-        public TweetsAdapter(Context context) {
+        public TweetsAdapter(Context context, ImageFetcher fetcher) {
+            mImageFetcher = fetcher;
             mInflater = LayoutInflater.from(context);
         }
 
@@ -306,7 +338,7 @@ public class MainActivityFragment extends Fragment implements AbsListView.OnScro
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
             if (convertView == null) {
-                convertView = mInflater.inflate(R.layout.tweet_adapter_layout,
+                convertView = mInflater.inflate(R.layout.tweet_item_layout,
                         parent, false);
             }
             TextView text = ViewHolder.get(convertView, R.id.text);
@@ -318,6 +350,7 @@ public class MainActivityFragment extends Fragment implements AbsListView.OnScro
             text.setText(tweet.getText());
             name.setText(tweet.getUser().getName());
             screenName.setText("@" + tweet.getUser().getScreenName());
+            mImageFetcher.loadImage(tweet.getUser().getProfileImageUrl(), profileImg);
 
             return convertView;
         }
